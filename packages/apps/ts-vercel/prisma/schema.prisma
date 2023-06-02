@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// Category one-to-many products (Owner)
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique @db.VarChar(150)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  Product   Product[]
+
+  @@map("categories")
+}
+
+enum Visibility {
+  VISIBLE
+  HIDDEN
+  FEATURED
+  DEAL
+}
+
+// Category one-to-many products (children)
+// Product one-to-many product-tags (owner)
+// LineItem one-to-many products (children)
+model Product {
+  id          String       @id @default(uuid())
+  name        String       @unique @db.VarChar(200)
+  slug        String       @unique @db.VarChar(200)
+  description String       @db.Text
+  price       Float        @db.DoublePrecision
+  isAvailable Boolean      @default(true) @map("is_available") @db.Boolean
+  visibility  Visibility   @default(VISIBLE)
+  pictures    String[]
+  extras      String?      @db.VarChar(200)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  Category    Category     @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  ProductTag  ProductTag[]
+  LineItem    LineItems?    @relation(fields: [lineItemId], references: [id])
+  lineItemId  String?
+
+  @@map("products")
+}
+
+// Tag one-to-many product-tags (owner)
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique @db.VarChar(150)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ProductTag ProductTag[]
+
+  @@map("tags")
+}
+
+// Product one-to-many product-tags (children)
+// Tag one-to-many product-tags (children)
+model ProductTag {
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id")
+  tag       Tag     @relation(fields: [tagId], references: [id])
+  tagId     String  @map("tag_id")
+
+  @@id([productId, tagId])
+  @@map("products_tags")
+}
+
+// Account one-to-one account address (children)
+// ShippingAddress one-to-one account address (children)
+model AccountAddress {
+  id            String @id @default(uuid())
+  city          String @db.VarChar(50)
+  postalCode    String @map("postal_code")
+  streetAddress String @map("street_address")
+  country       String @db.VarChar(50)
+
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId String  @unique
+
+  shippingAddress   ShippingAddress @relation(fields: [shippingAddressId], references: [id])
+  shippingAddressId String          @unique @map("shipping_address_id")
+
+  @@map("account_addresses")
+}
+
+// Account one-to-many shipping address (children)
+// ShippingAddress one-to-one account address (owner)
+model ShippingAddress {
+  id            String @id @default(uuid())
+  city          String @db.VarChar(50)
+  postalCode    String @map("postal_code")
+  streetAddress String @map("street_address")
+  country       String
+
+  accountAddressShipping AccountAddress?
+
+  Account   Account? @relation(fields: [accountId], references: [id])
+  accountId String?  @map("account_id")
+
+  @@map("shipping_addresses")
+}
+
+// LineItem one-to-many products (owner)
+// Order one-to-many line items (children)
+model LineItems {
+  id         String    @id @default(uuid())
+  product    Product[]
+  currency   String    @default("BRL")
+  unitAmount Float     @map("unit_amount") @db.DoublePrecision
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  Order   Order  @relation(fields: [orderId], references: [id])
+  orderId String @unique @map("order_id")
+
+  @@map("line_items")
+}
+
+// Order one-to-many line items (owner)
+model Order {
+  id        String     @id @default(uuid())
+  lineItems LineItems?
+  name      String     @db.VarChar(150)
+  email     String
+
+  isPaid    Boolean  @map("is_paid")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("orders")
+}
+
+//Next-Auth
+// User one-to-many accounts (children)
+// Account one-to-one account addresses (owner)
+// Account one-to-many shipping addresses (owner)
+model Account {
+  id                 String    @id @default(uuid())
+  providerType       String    @map("provider_type")
+  providerId         String    @map("provider_id")
+  providerAccountId  String    @map("provider_account_id")
+  refreshToken       String?   @map("refresh_token")
+  accessToken        String?   @map("access_token")
+  accessTokenExpires DateTime? @map("access_token_expires")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  user   User   @relation(references: [id], onDelete: Cascade, fields: [userId])
+  userId String
+
+  accountAddress AccountAddress?
+
+  shippingAddress ShippingAddress[]
+
+  @@unique([providerId, providerAccountId])
+  @@map("accounts")
+}
+
+// User one-to-many sessions (children)
+model Session {
+  id           String   @id @default(uuid())
+  expires      DateTime
+  sessionToken String   @unique @map("session_token")
+  accessToken  String   @unique @map("access_token")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(references: [id], onDelete: Cascade, fields: [userId])
+  userId String
+
+  @@map("sessions")
+}
+
+// User one-to-many accounts (owner)
+// User one-to-many sessions (owner)
+model User {
+  id            String    @id @default(uuid())
+  name          String?   @db.VarChar(50)
+  username      String?   @db.VarChar(50)
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  account       Account[]
+  session       Session[]
+
+  @@map("users")
+}
