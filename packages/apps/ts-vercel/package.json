@@ -13,6 +13,7 @@
     "execute": "ts-node prisma/scripts/db-reset.ts"
   },
   "dependencies": {
+    "@chakra-ui/icons": "^2.0.19",
     "@chakra-ui/next-js": "^2.1.3",
     "@chakra-ui/react": "^2.6.1",
     "@emotion/react": "^11.11.0",

@@ -13,7 +13,7 @@ import {
 import { ReactNode } from 'react'
 import { BiMailSend } from 'react-icons/bi'
 import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa'
-import { AppLogo } from '../AppLogo'
+import { AppLogo } from '../../AppLogo'
 
 const SocialButton = ({
   children,
@@ -58,7 +58,8 @@ const ListHeader = ({ children }: { children: ReactNode }) => {
 export const Footer = () => {
   return (
     <Box
-      bg="gray.900"
+      width={'100%'}
+      bg="#B1ABAB"
       color="white"
       mt="2rem"
       bgRepeat={'no-repeat'}

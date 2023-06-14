@@ -1,21 +1,15 @@
-import { extendTheme } from '@chakra-ui/react'
+// theme.ts
 
-const breakpoints = {
-  sm: '40em',
-  md: '52em',
-  lg: '64em',
-  xl: '80em',
+// 1. import `extendTheme` function
+import { extendTheme, ThemeConfig } from '@chakra-ui/react'
+
+// 2. Add your color mode config
+const config: ThemeConfig = {
+  initialColorMode: 'light',
+  useSystemColorMode: false,
 }
 
-const theme = extendTheme({
-  colors: {
-    black: '#16161D',
-  },
-  fonts: {
-    heading: 'Questrial',
-    body: 'Questrial',
-  },
-  breakpoints,
-})
+// 3. extend the theme
+const theme = extendTheme({ config })
 
 export default theme
